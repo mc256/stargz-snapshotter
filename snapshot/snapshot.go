@@ -395,16 +395,17 @@ func (o *snapshotter) cleanup(ctx context.Context, cleanupCommitted bool) error 
 func (o *snapshotter) cleanupDirectories(ctx context.Context, cleanupCommitted bool) ([]string, error) {
 	// Get a write transaction to ensure no other write transaction can be entered
 	// while the cleanup is scanning.
-	ctx, t, err := o.ms.TransactionContext(ctx, true)
+	wctx, t, err := o.ms.TransactionContext(ctx, true)
 	if err != nil {
 		return nil, err
 	}
 
 	defer t.Rollback()
-	return o.getCleanupDirectories(ctx, t, cleanupCommitted)
+	return o.getCleanupDirectories(wctx, t, cleanupCommitted)
 }
 
 func (o *snapshotter) getCleanupDirectories(ctx context.Context, t storage.Transactor, cleanupCommitted bool) ([]string, error) {
+
 	ids, err := storage.IDMap(ctx)
 	if err != nil {
 		return nil, err
