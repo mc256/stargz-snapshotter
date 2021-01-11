@@ -683,11 +683,16 @@ func (w *Writer) AppendTar(r io.Reader) error {
 			var written int64
 			totalSize := ent.Size // save it before we destroy ent
 			tee := io.TeeReader(tr, payloadDigest.Hash())
+			didWrite := false
+			var prevEnt *TOCEntry
+			prevEnt = nil
 			for written < totalSize {
 				if err := w.closeGz(); err != nil {
 					return err
 				}
-
+				if prevEnt != nil {
+					prevEnt.CompressedSize = w.cw.n - prevEnt.Offset
+				}
 				chunkSize := int64(w.chunkSize())
 				remain := totalSize - written
 				if remain < chunkSize {
@@ -700,12 +705,13 @@ func (w *Writer) AppendTar(r io.Reader) error {
 				chunkDigest := digest.Canonical.Digester()
 
 				w.condOpenGz()
-
+				didWrite = true
 				teeChunk := io.TeeReader(tee, chunkDigest.Hash())
 				if _, err := io.CopyN(tw, teeChunk, chunkSize); err != nil {
 					return fmt.Errorf("error copying %q: %v", h.Name, err)
 				}
 				ent.ChunkDigest = chunkDigest.Digest().String()
+				prevEnt = ent
 				w.toc.Entries = append(w.toc.Entries, ent)
 				written += chunkSize
 				ent = &TOCEntry{
@@ -713,10 +719,19 @@ func (w *Writer) AppendTar(r io.Reader) error {
 					Type: "chunk",
 				}
 			}
+			if didWrite {
+				if err := w.closeGz(); err != nil {
+					return err
+				}
+				if prevEnt != nil {
+					prevEnt.CompressedSize = w.cw.n - prevEnt.Offset
+				}
+				w.condOpenGz()
+			}
 		} else {
 			w.toc.Entries = append(w.toc.Entries, ent)
 		}
-		if payloadDigest != nil {
+		if regFileEntry != nil && payloadDigest != nil {
 			regFileEntry.Digest = payloadDigest.Digest().String()
 		}
 		if err := tw.Flush(); err != nil {

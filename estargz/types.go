@@ -175,6 +175,8 @@ type TOCEntry struct {
 	// as "sha256:0123abcd...".
 	ChunkDigest string `json:"chunkDigest,omitempty"`
 
+	CompressedSize int64 `json:"compressedSize,omitempty"`
+
 	children map[string]*TOCEntry
 }
 
