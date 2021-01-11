@@ -82,7 +82,7 @@ const (
 	opaqueXattrValue          = "y"
 	stateDirName              = ".stargz-snapshotter"
 	defaultResolveResultEntry = 100
-	defaultPrefetchTimeoutSec = 10
+	defaultPrefetchTimeoutSec = 100000
 	defaultMaxConcurrency     = 2
 	statFileMode              = syscall.S_IFREG | 0400 // -r--------
 	stateDirMode              = syscall.S_IFDIR | 0500 // dr-x------

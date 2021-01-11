@@ -2,3 +2,6 @@ disable_verification = true
 [[resolver.host."registry2:5000".mirrors]]
 host = "registry2:5000"
 insecure = true
+[[resolver.host."container-worker.momoko:5000".mirrors]]
+host = "container-worker.momoko:5000"
+insecure = true
