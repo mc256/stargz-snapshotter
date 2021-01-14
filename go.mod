@@ -8,7 +8,6 @@ require (
 	github.com/containerd/continuity v0.0.0-20201208142359-180525291bb7
 	github.com/containerd/go-cni v1.0.1
 	github.com/containerd/go-runc v0.0.0-20200220073739-7016d3ce2328
-	github.com/containerd/stargz-snapshotter/estargz v0.0.0-00010101000000-000000000000
 	github.com/containernetworking/plugins v0.8.7 // indirect
 	github.com/docker/cli v0.0.0-20191017083524-a8ff7f821017
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200730172259-9f28837c1d93+incompatible
@@ -16,6 +15,7 @@ require (
 	github.com/google/go-containerregistry v0.1.2
 	github.com/hanwen/go-fuse/v2 v2.0.4-0.20201208195215-4a458845028b
 	github.com/hashicorp/go-multierror v1.1.0
+	github.com/mc256/stargz-snapshotter/estargz v0.0.0-00010101000000-000000000000
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/opencontainers/runc v1.0.0-rc92

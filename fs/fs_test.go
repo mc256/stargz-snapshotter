@@ -43,14 +43,14 @@ import (
 
 	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes/docker"
-	"github.com/containerd/stargz-snapshotter/cache"
-	"github.com/containerd/stargz-snapshotter/estargz"
-	"github.com/containerd/stargz-snapshotter/fs/reader"
-	"github.com/containerd/stargz-snapshotter/fs/remote"
-	"github.com/containerd/stargz-snapshotter/fs/source"
-	"github.com/containerd/stargz-snapshotter/task"
 	fusefs "github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
+	"github.com/mc256/stargz-snapshotter/cache"
+	"github.com/mc256/stargz-snapshotter/estargz"
+	"github.com/mc256/stargz-snapshotter/fs/reader"
+	"github.com/mc256/stargz-snapshotter/fs/remote"
+	"github.com/mc256/stargz-snapshotter/fs/source"
+	"github.com/mc256/stargz-snapshotter/task"
 	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sys/unix"
@@ -386,12 +386,14 @@ func (tl *testLayer) OpenFile(name string) (io.ReaderAt, error) {
 
 type dummyBlob struct{}
 
-func (db *dummyBlob) Authn(tr http.RoundTripper) (http.RoundTripper, error)             { return nil, nil }
-func (db *dummyBlob) ReadAt(p []byte, offset int64, opts ...remote.Option) (int, error) { return 0, nil }
-func (db *dummyBlob) Size() int64                                                       { return 10 }
-func (db *dummyBlob) FetchedSize() int64                                                { return 5 }
-func (db *dummyBlob) Check() error                                                      { return nil }
-func (db *dummyBlob) Cache(offset int64, size int64, option ...remote.Option) error     { return nil }
+func (db *dummyBlob) Authn(tr http.RoundTripper) (http.RoundTripper, error) { return nil, nil }
+func (db *dummyBlob) ReadAt(p []byte, offset int64, opts ...remote.Option) (int, error) {
+	return 0, nil
+}
+func (db *dummyBlob) Size() int64                                                   { return 10 }
+func (db *dummyBlob) FetchedSize() int64                                            { return 5 }
+func (db *dummyBlob) Check() error                                                  { return nil }
+func (db *dummyBlob) Cache(offset int64, size int64, option ...remote.Option) error { return nil }
 func (db *dummyBlob) Refresh(ctx context.Context, hosts docker.RegistryHosts, refspec reference.Spec, desc ocispec.Descriptor) error {
 	return nil
 }

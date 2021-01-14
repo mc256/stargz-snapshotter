@@ -42,7 +42,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/containerd/stargz-snapshotter/estargz/errorutil"
+	"github.com/mc256/stargz-snapshotter/estargz/errorutil"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )
