@@ -34,7 +34,7 @@ require (
 
 replace (
 	// Import local package for estargz.
-	github.com/containerd/stargz-snapshotter/estargz => ./estargz
+	github.com/mc256/stargz-snapshotter/estargz => ./estargz
 
 	// NOTE: github.com/containerd/containerd v1.4.0 depends on github.com/urfave/cli v1.22.1
 	//       because of https://github.com/urfave/cli/issues/1092

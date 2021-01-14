@@ -1,4 +1,4 @@
-module github.com/containerd/stargz-snapshotter/estargz
+module github.com/mc256/stargz-snapshotter/estargz
 
 go 1.13
 
