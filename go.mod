@@ -1,4 +1,4 @@
-module github.com/containerd/stargz-snapshotter
+module github.com/mc256/stargz-snapshotter
 
 go 1.13
 
@@ -8,7 +8,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20201208142359-180525291bb7
 	github.com/containerd/go-cni v1.0.1
 	github.com/containerd/go-runc v0.0.0-20200220073739-7016d3ce2328
-	github.com/containerd/stargz-snapshotter/estargz v0.0.0-00010101000000-000000000000
+	github.com/mc256/stargz-snapshotter/estargz v0.0.0-00010101000000-000000000000
 	github.com/containernetworking/plugins v0.8.7 // indirect
 	github.com/docker/cli v0.0.0-20191017083524-a8ff7f821017
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200730172259-9f28837c1d93+incompatible
@@ -34,7 +34,7 @@ require (
 
 replace (
 	// Import local package for estargz.
-	github.com/containerd/stargz-snapshotter/estargz => ./estargz
+	github.com/mc256/stargz-snapshotter/estargz => ./estargz
 
 	// NOTE: github.com/containerd/containerd v1.4.0 depends on github.com/urfave/cli v1.22.1
 	//       because of https://github.com/urfave/cli/issues/1092

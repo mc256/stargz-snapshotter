@@ -22,7 +22,7 @@ import (
 
 	"github.com/containerd/containerd/cmd/ctr/app"
 	"github.com/containerd/containerd/pkg/seed"
-	"github.com/containerd/stargz-snapshotter/cmd/ctr-remote/commands"
+	"github.com/mc256/stargz-snapshotter/cmd/ctr-remote/commands"
 	"github.com/urfave/cli"
 )
 

@@ -38,7 +38,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/containerd/stargz-snapshotter/cache"
+	"github.com/mc256/stargz-snapshotter/cache"
 )
 
 const (

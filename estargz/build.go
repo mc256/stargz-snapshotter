@@ -36,7 +36,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/containerd/stargz-snapshotter/estargz/errorutil"
+	"github.com/mc256/stargz-snapshotter/estargz/errorutil"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
