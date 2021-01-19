@@ -235,11 +235,11 @@ func parentDir(p string) string {
 	return strings.TrimSuffix(dir, "/")
 }
 
-func (r *Reader) GetTOC() (m map[string]*TOCEntry, chunks map[string][]*TOCEntry) {
+func (r *Reader) GetTOC() (m map[string]*TOCEntry, chunks map[string][]*TOCEntry, json *jtoc) {
 	if r.toc == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
-	return r.m, r.chunks
+	return r.m, r.chunks, r.toc
 }
 
 func (r *Reader) getOrCreateDir(d string) *TOCEntry {
