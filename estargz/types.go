@@ -181,7 +181,7 @@ type TOCEntry struct {
 
 	CompressedSize int64 `json:"compressedSize,omitempty"`
 
-	sourceLayer *digest.Digest
+	sourceLayer int
 	landmark    int
 
 	children map[string]*TOCEntry
@@ -260,7 +260,7 @@ func (e *TOCEntry) RemoveAllChildren() {
 	if e == nil || e.children == nil {
 		return
 	}
-	for k, item := range e.children{
+	for _, item := range e.children{
 		if item.Type == "dir"{
 			e.NumLink--
 		}
@@ -272,11 +272,11 @@ func (e *TOCEntry) RemoveAllChildren() {
 
 // Helper Methods
 
-func (e *TOCEntry) SetSourceLayer(d *digest.Digest) {
+func (e *TOCEntry) SetSourceLayer(d int) {
 	e.sourceLayer = d
 }
 
-func (e *TOCEntry) GetSourceLayer() *digest.Digest {
+func (e *TOCEntry) GetSourceLayer() int {
 	return e.sourceLayer
 }
 
