@@ -226,13 +226,9 @@ func (e *TOCEntry) AddChild(baseName string, child *TOCEntry) {
 }
 
 func (e *TOCEntry) GetChild(baseName string) (*TOCEntry, bool) {
-	if e == nil {
+	if e == nil || e.children == nil {
 		return nil, false
 	}
-	if e.children == nil {
-		return nil, false
-	}
-
 	item, okay := e.children[baseName]
 	return item, okay
 }
@@ -244,6 +240,34 @@ func (e *TOCEntry) HasChild(baseName string) (r bool) {
 
 func (e *TOCEntry) Children() map[string]*TOCEntry {
 	return e.children
+}
+
+func (e *TOCEntry) RemoveChild(baseName string) {
+	if e == nil || e.children == nil {
+		return
+	}
+	item, okay := e.children[baseName]
+	if !okay {
+		return
+	}
+	if item.Type == "dir"{
+		e.NumLink--
+	}
+	delete(e.children, baseName)
+}
+
+func (e *TOCEntry) RemoveAllChildren() {
+	if e == nil || e.children == nil {
+		return
+	}
+	for k, item := range e.children{
+		if item.Type == "dir"{
+			e.NumLink--
+		}
+	}
+	for k := range e.children {
+		delete(e.children, k)
+	}
 }
 
 // Helper Methods
