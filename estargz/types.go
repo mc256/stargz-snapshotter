@@ -428,13 +428,13 @@ func MakeEmptyFile(fileName string) (e *TOCEntry) {
 }
 
 // MakeWhiteoutFile parent should include the trailing backslash
-func MakeWhiteoutFile(baseName, parentDir string, source *digest.Digest) (e *TOCEntry) {
-	e = MakeEmptyFile(path.Join(parentDir, fmt.Sprintf(".wh.%s", baseName)), source)
+func MakeWhiteoutFile(baseName, parentDir string) (e *TOCEntry) {
+	e = MakeEmptyFile(path.Join(parentDir, fmt.Sprintf(".wh.%s", baseName)))
 	return e
 }
 
-func MakeOpaqueWhiteoutFile(parentDir string, source *digest.Digest) (e *TOCEntry) {
-	e = MakeEmptyFile(path.Join(parentDir, ".wh..wh..opq"), source)
+func MakeOpaqueWhiteoutFile(parentDir string) (e *TOCEntry) {
+	e = MakeEmptyFile(path.Join(parentDir, ".wh..wh..opq"))
 	return e
 }
 
