@@ -308,11 +308,6 @@ func (e *TOCEntry) IsWhiteoutFile() bool {
 	return strings.HasPrefix(path.Base(e.Name), ".wh.")
 }
 
-// Source Comparsion
-func SameSource(a, b *TOCEntry) bool {
-	return a.sourceLayer.String() == b.sourceLayer.String()
-}
-
 // Other Operations
 
 func (e *TOCEntry) CopyEntry() (c *TOCEntry) {
@@ -422,12 +417,11 @@ func (e *TOCEntry) ToTarHeader() (h *tar.Header) {
 	return
 }
 
-func MakeEmptyFile(fileName string, source *digest.Digest) (e *TOCEntry) {
+func MakeEmptyFile(fileName string) (e *TOCEntry) {
 	e = &TOCEntry{
 		Name:        fileName,
 		Type:        "reg",
 		NumLink:     1,
-		sourceLayer: source,
 		Digest:      EmptyFileHash,
 	}
 	return e
