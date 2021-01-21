@@ -332,7 +332,7 @@ func (e *TOCEntry) CopyEntry() (c *TOCEntry) {
 		Digest:      e.Digest,
 		ChunkOffset: e.ChunkOffset,
 		ChunkSize:   e.ChunkSize,
-		CompressedSize: e.CompressedSize
+		CompressedSize: e.CompressedSize,
 		sourceLayer: e.sourceLayer,
 		landmark:    e.landmark,
 	}
