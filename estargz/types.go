@@ -190,6 +190,10 @@ type TOCEntry struct {
 // ModTime returns the entry's modification time.
 func (e *TOCEntry) ModTime() time.Time { return e.modTime }
 
+func (e *TOCEntry) InitModTime() {
+	e.modTime, _ = time.Parse(time.RFC3339, e.ModTime3339)
+}
+
 // NextOffset returns the position (relative to the start of the
 // stargz file) of the next gzip boundary after e.Offset.
 func (e *TOCEntry) NextOffset() int64 { return e.nextOffset }
@@ -250,7 +254,7 @@ func (e *TOCEntry) RemoveChild(baseName string) {
 	if !okay {
 		return
 	}
-	if item.Type == "dir"{
+	if item.Type == "dir" {
 		e.NumLink--
 	}
 	delete(e.children, baseName)
@@ -260,8 +264,8 @@ func (e *TOCEntry) RemoveAllChildren() {
 	if e == nil || e.children == nil {
 		return
 	}
-	for _, item := range e.children{
-		if item.Type == "dir"{
+	for _, item := range e.children {
+		if item.Type == "dir" {
 			e.NumLink--
 		}
 	}
@@ -312,29 +316,29 @@ func (e *TOCEntry) IsWhiteoutFile() bool {
 
 func (e *TOCEntry) CopyEntry() (c *TOCEntry) {
 	c = &TOCEntry{
-		Name:        e.Name,
-		Type:        e.Type,
-		Size:        e.Size,
-		ModTime3339: e.ModTime3339,
-		modTime:     e.modTime,
-		LinkName:    e.LinkName,
-		Mode:        e.Mode,
-		UID:         e.UID,
-		GID:         e.GID,
-		Uname:       e.Uname,
-		Gname:       e.Gname,
-		Offset:      e.Offset,
-		nextOffset:  e.nextOffset,
-		DevMajor:    e.DevMajor,
-		DevMinor:    e.DevMinor,
-		NumLink:     e.NumLink,
-		Xattrs:      e.Xattrs,
-		Digest:      e.Digest,
-		ChunkOffset: e.ChunkOffset,
-		ChunkSize:   e.ChunkSize,
+		Name:           e.Name,
+		Type:           e.Type,
+		Size:           e.Size,
+		ModTime3339:    e.ModTime3339,
+		modTime:        e.modTime,
+		LinkName:       e.LinkName,
+		Mode:           e.Mode,
+		UID:            e.UID,
+		GID:            e.GID,
+		Uname:          e.Uname,
+		Gname:          e.Gname,
+		Offset:         e.Offset,
+		nextOffset:     e.nextOffset,
+		DevMajor:       e.DevMajor,
+		DevMinor:       e.DevMinor,
+		NumLink:        e.NumLink,
+		Xattrs:         e.Xattrs,
+		Digest:         e.Digest,
+		ChunkOffset:    e.ChunkOffset,
+		ChunkSize:      e.ChunkSize,
 		CompressedSize: e.CompressedSize,
-		sourceLayer: e.sourceLayer,
-		landmark:    e.landmark,
+		sourceLayer:    e.sourceLayer,
+		landmark:       e.landmark,
 	}
 	return
 }
@@ -420,10 +424,10 @@ func (e *TOCEntry) ToTarHeader() (h *tar.Header) {
 
 func MakeEmptyFile(fileName string) (e *TOCEntry) {
 	e = &TOCEntry{
-		Name:        fileName,
-		Type:        "reg",
-		NumLink:     1,
-		Digest:      EmptyFileHash,
+		Name:    fileName,
+		Type:    "reg",
+		NumLink: 1,
+		Digest:  EmptyFileHash,
 	}
 	return e
 }

@@ -160,7 +160,7 @@ func (r *Reader) initFields() error {
 				ent.Gname = uname[ent.GID]
 			}
 
-			ent.modTime, _ = time.Parse(time.RFC3339, ent.ModTime3339)
+			ent.InitModTime()
 
 			if ent.Type == "dir" {
 				ent.NumLink++ // Parent dir links to this directory
