@@ -23,6 +23,7 @@
 package commands
 
 import (
+	"bufio"
 	gocontext "context"
 	"encoding/csv"
 	"encoding/json"
@@ -96,13 +97,10 @@ var OptimizeCommand = cli.Command{
 			Name:  "env",
 			Usage: "environment valulable to add or override to the image's default config",
 		},
-		/*
-			cli.StringSliceFlag{
-				Name:  "env-file",
-				Usage: "environment file to add or override to the image's default config",
-			},
-
-		*/
+		cli.StringFlag{
+			Name:  "env-file",
+			Usage: "environment file to add or override to the image's default config",
+		},
 		cli.StringSliceFlag{
 			Name:  "mount",
 			Usage: "additional mounts for the container (e.g. type=foo,source=/path,destination=/target,options=bind)",
@@ -251,27 +249,26 @@ func parseArgs(clicontext *cli.Context) (opts []sampler.Option, err error) {
 	if env := clicontext.StringSlice("env"); len(env) > 0 {
 		opts = append(opts, sampler.WithEnvs(env))
 	}
-	/*
-		if envPath := clicontext.String("env-file"); envPath != "" {
-			var vars []string
 
-			f, err := os.Open(envPath)
-			if err != nil {
-				return nil, err
-			}
-			defer f.Close()
+	if envPath := clicontext.String("env-file"); envPath != "" {
+		var vars []string
 
-			sc := bufio.NewScanner(f)
-			for sc.Scan() {
-				vars = append(vars, sc.Text())
-			}
-			if err = sc.Err(); err != nil {
-				return nil, errors.Wrapf(err, "invalid option \"envPath\"")
-			}
-			opts = append(opts, sampler.WithEnvs(vars))
+		f, err := os.Open(envPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid option \"envPath\" >%s<", envPath)
 		}
+		defer f.Close()
 
-	*/
+		sc := bufio.NewScanner(f)
+		for sc.Scan() {
+			vars = append(vars, sc.Text())
+		}
+		if err = sc.Err(); err != nil {
+			return nil, errors.Wrapf(err, "invalid option \"envPath\"")
+		}
+		opts = append(opts, sampler.WithEnvs(vars))
+	}
+
 	if mounts := clicontext.StringSlice("mount"); len(mounts) > 0 {
 		opts = append(opts, sampler.WithMounts(mounts))
 	}
