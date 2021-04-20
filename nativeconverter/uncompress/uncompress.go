@@ -25,7 +25,7 @@ import (
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
-	"github.com/containerd/stargz-snapshotter/nativeconverter"
+	"github.com/mc256/stargz-snapshotter/nativeconverter"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 

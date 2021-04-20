@@ -22,9 +22,9 @@ import (
 
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/platforms"
-	"github.com/containerd/stargz-snapshotter/estargz"
-	"github.com/containerd/stargz-snapshotter/nativeconverter"
-	"github.com/containerd/stargz-snapshotter/util/testutil"
+	"github.com/mc256/stargz-snapshotter/estargz"
+	"github.com/mc256/stargz-snapshotter/nativeconverter"
+	"github.com/mc256/stargz-snapshotter/util/testutil"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 

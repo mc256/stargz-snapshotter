@@ -26,8 +26,8 @@ import (
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/snapshots"
-	fsconfig "github.com/containerd/stargz-snapshotter/fs/config"
-	"github.com/containerd/stargz-snapshotter/fs/source"
+	fsconfig "github.com/mc256/stargz-snapshotter/fs/config"
+	"github.com/mc256/stargz-snapshotter/fs/source"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/urfave/cli"
 )

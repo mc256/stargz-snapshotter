@@ -32,8 +32,8 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/containerd/stargz-snapshotter/cache"
-	"github.com/containerd/stargz-snapshotter/estargz"
+	"github.com/mc256/stargz-snapshotter/cache"
+	"github.com/mc256/stargz-snapshotter/estargz"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"

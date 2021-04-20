@@ -42,7 +42,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/containerd/stargz-snapshotter/estargz/errorutil"
+	"github.com/mc256/stargz-snapshotter/estargz/errorutil"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )
@@ -124,9 +124,19 @@ func (r *Reader) initFields() error {
 	var lastPath string
 	uname := map[int]string{}
 	gname := map[int]string{}
+	landmark := 0
 	var lastRegEnt *TOCEntry
 	for _, ent := range r.toc.Entries {
 		ent.Name = cleanEntryName(ent.Name)
+		if ent.Name == ".prefetch.landmark" {
+			landmark = 1
+		}
+		if ent.Name == ".no.prefetch.landmark" {
+			landmark = 2
+		}
+		if ent.landmark == 0 {
+			ent.landmark = landmark
+		}
 		if ent.Type == "reg" {
 			lastRegEnt = ent
 		}
@@ -150,7 +160,7 @@ func (r *Reader) initFields() error {
 				ent.Gname = uname[ent.GID]
 			}
 
-			ent.modTime, _ = time.Parse(time.RFC3339, ent.ModTime3339)
+			ent.InitModTime()
 
 			if ent.Type == "dir" {
 				ent.NumLink++ // Parent dir links to this directory
@@ -203,13 +213,13 @@ func (r *Reader) initFields() error {
 				return fmt.Errorf("%q is a hardlink but the linkname %q isn't found", ent.Name, ent.LinkName)
 			}
 		}
-		pdir.addChild(path.Base(name), ent)
+		pdir.AddChild(path.Base(name), ent)
 	}
 
 	lastOffset := r.sr.Size()
 	for i := len(r.toc.Entries) - 1; i >= 0; i-- {
 		e := r.toc.Entries[i]
-		if e.isDataType() {
+		if e.IsDataType() {
 			e.nextOffset = lastOffset
 		}
 		if e.Offset != 0 {
@@ -225,6 +235,13 @@ func parentDir(p string) string {
 	return strings.TrimSuffix(dir, "/")
 }
 
+func (r *Reader) GetTOC() (m map[string]*TOCEntry, chunks map[string][]*TOCEntry, json *jtoc) {
+	if r.toc == nil {
+		return nil, nil, nil
+	}
+	return r.m, r.chunks, r.toc
+}
+
 func (r *Reader) getOrCreateDir(d string) *TOCEntry {
 	e, ok := r.m[d]
 	if !ok {
@@ -237,7 +254,7 @@ func (r *Reader) getOrCreateDir(d string) *TOCEntry {
 		r.m[d] = e
 		if d != "" {
 			pdir := r.getOrCreateDir(parentDir(d))
-			pdir.addChild(path.Base(d), e)
+			pdir.AddChild(path.Base(d), e)
 		}
 	}
 	return e
@@ -306,7 +323,7 @@ func (v *verifier) Verifier(ce *TOCEntry) (digest.Verifier, error) {
 func (r *Reader) ChunkEntryForOffset(name string, offset int64) (e *TOCEntry, ok bool) {
 	name = cleanEntryName(name)
 	e, ok = r.Lookup(name)
-	if !ok || !e.isDataType() {
+	if !ok || !e.IsDataType() {
 		return nil, false
 	}
 	ents := r.chunks[name]

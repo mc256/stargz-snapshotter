@@ -29,7 +29,7 @@ import (
 	"time"
 
 	"github.com/containerd/containerd/log"
-	"github.com/containerd/stargz-snapshotter/util/positionwatcher"
+	"github.com/mc256/stargz-snapshotter/util/positionwatcher"
 	fusefs "github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 	"github.com/pkg/errors"

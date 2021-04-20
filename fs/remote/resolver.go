@@ -42,8 +42,8 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes/docker"
-	"github.com/containerd/stargz-snapshotter/cache"
-	"github.com/containerd/stargz-snapshotter/fs/config"
+	"github.com/mc256/stargz-snapshotter/cache"
+	"github.com/mc256/stargz-snapshotter/fs/config"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )

@@ -23,8 +23,11 @@
 package estargz
 
 import (
+	"archive/tar"
+	"fmt"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	digest "github.com/opencontainers/go-digest"
@@ -81,6 +84,7 @@ const (
 	NoPrefetchLandmark = ".no.prefetch.landmark"
 
 	landmarkContents = 0xf
+	EmptyFileHash    = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 )
 
 // jtoc is the JSON-serialized table of contents index of the files in the stargz file.
@@ -177,32 +181,27 @@ type TOCEntry struct {
 
 	CompressedSize int64 `json:"compressedSize,omitempty"`
 
+	sourceLayer int
+	landmark    int
+
 	children map[string]*TOCEntry
 }
 
 // ModTime returns the entry's modification time.
 func (e *TOCEntry) ModTime() time.Time { return e.modTime }
 
+func (e *TOCEntry) InitModTime() {
+	e.modTime, _ = time.Parse(time.RFC3339, e.ModTime3339)
+}
+
 // NextOffset returns the position (relative to the start of the
 // stargz file) of the next gzip boundary after e.Offset.
 func (e *TOCEntry) NextOffset() int64 { return e.nextOffset }
 
-func (e *TOCEntry) addChild(baseName string, child *TOCEntry) {
-	if e.children == nil {
-		e.children = make(map[string]*TOCEntry)
-	}
-	if child.Type == "dir" {
-		e.NumLink++ // Entry ".." in the subdirectory links to this directory
-	}
-	e.children[baseName] = child
-}
-
-// isDataType reports whether TOCEntry is a regular file or chunk (something that
-// contains regular file data).
-func (e *TOCEntry) isDataType() bool { return e.Type == "reg" || e.Type == "chunk" }
-
 // Stat returns a FileInfo value representing e.
 func (e *TOCEntry) Stat() os.FileInfo { return fileInfo{e} }
+
+func (e *TOCEntry) Landmark() int { return e.landmark }
 
 // ForeachChild calls f for each child item. If f returns false, iteration ends.
 // If e is not a directory, f is not called.
@@ -219,6 +218,244 @@ func (e *TOCEntry) LookupChild(baseName string) (child *TOCEntry, ok bool) {
 	child, ok = e.children[baseName]
 	return
 }
+
+func (e *TOCEntry) AddChild(baseName string, child *TOCEntry) {
+	if e.children == nil {
+		e.children = make(map[string]*TOCEntry)
+	}
+	if child.Type == "dir" {
+		e.NumLink++ // Entry ".." in the subdirectory links to this directory
+	}
+	e.children[baseName] = child
+}
+
+func (e *TOCEntry) GetChild(baseName string) (*TOCEntry, bool) {
+	if e == nil || e.children == nil {
+		return nil, false
+	}
+	item, okay := e.children[baseName]
+	return item, okay
+}
+
+func (e *TOCEntry) HasChild(baseName string) (r bool) {
+	_, r = e.GetChild(baseName)
+	return
+}
+
+func (e *TOCEntry) Children() map[string]*TOCEntry {
+	return e.children
+}
+
+func (e *TOCEntry) RemoveChild(baseName string) {
+	if e == nil || e.children == nil {
+		return
+	}
+	item, okay := e.children[baseName]
+	if !okay {
+		return
+	}
+	if item.Type == "dir" {
+		e.NumLink--
+	}
+	delete(e.children, baseName)
+}
+
+func (e *TOCEntry) RemoveAllChildren() {
+	if e == nil || e.children == nil {
+		return
+	}
+	for _, item := range e.children {
+		if item.Type == "dir" {
+			e.NumLink--
+		}
+	}
+	for k := range e.children {
+		delete(e.children, k)
+	}
+}
+
+// Helper Methods
+
+func (e *TOCEntry) SetSourceLayer(d int) {
+	e.sourceLayer = d
+}
+
+func (e *TOCEntry) GetSourceLayer() int {
+	return e.sourceLayer
+}
+
+// IsDataType reports whether TOCEntry is a regular file or chunk (something that
+// contains regular file data).
+func (e *TOCEntry) IsDataType() bool { return e.Type == "reg" || e.Type == "chunk" }
+
+func (e *TOCEntry) IsDir() bool {
+	return e.Type == "dir"
+}
+
+func (e *TOCEntry) IsMeta() bool {
+	return e.Type == "meta"
+}
+
+func (e *TOCEntry) IsLandmark() bool {
+	return e.Name == PrefetchLandmark || e.Name == NoPrefetchLandmark
+}
+
+func (e *TOCEntry) IsRoot() bool {
+	return e.Name == "."
+}
+
+func (e *TOCEntry) HasChunk() bool {
+	return e.Type == "reg" && e.ChunkSize > 0 && e.ChunkSize < e.Size
+}
+
+func (e *TOCEntry) IsWhiteoutFile() bool {
+	return strings.HasPrefix(path.Base(e.Name), ".wh.")
+}
+
+// Other Operations
+
+func (e *TOCEntry) CopyEntry() (c *TOCEntry) {
+	c = &TOCEntry{
+		Name:           e.Name,
+		Type:           e.Type,
+		Size:           e.Size,
+		ModTime3339:    e.ModTime3339,
+		modTime:        e.modTime,
+		LinkName:       e.LinkName,
+		Mode:           e.Mode,
+		UID:            e.UID,
+		GID:            e.GID,
+		Uname:          e.Uname,
+		Gname:          e.Gname,
+		Offset:         e.Offset,
+		nextOffset:     e.nextOffset,
+		DevMajor:       e.DevMajor,
+		DevMinor:       e.DevMinor,
+		NumLink:        e.NumLink,
+		Xattrs:         e.Xattrs,
+		Digest:         e.Digest,
+		ChunkOffset:    e.ChunkOffset,
+		ChunkSize:      e.ChunkSize,
+		CompressedSize: e.CompressedSize,
+		sourceLayer:    e.sourceLayer,
+		landmark:       e.landmark,
+	}
+	return
+}
+
+func (e *TOCEntry) UpdateMetadataFrom(s *TOCEntry) {
+	e.Name = s.Name
+	e.Type = s.Type
+	e.Size = s.Size
+	e.ModTime3339 = s.ModTime3339
+	e.modTime = s.modTime
+
+	e.LinkName = s.LinkName
+	e.Mode = s.Mode
+	e.UID = s.UID
+	e.GID = s.GID
+	e.Uname = s.Uname
+	e.Gname = s.Gname
+
+	e.DevMajor = s.DevMajor
+	e.DevMinor = s.DevMinor
+
+	e.NumLink = s.NumLink //TODO: We may need to change this later
+	// Ignore Offset, nextOffset
+
+	e.Xattrs = s.Xattrs
+	e.Digest = s.Digest
+	e.ChunkOffset = s.ChunkOffset
+	e.ChunkSize = s.ChunkSize
+
+	if e.landmark > s.landmark {
+		e.landmark = s.landmark
+	}
+
+	// SourceLayer remains unchanged
+}
+
+func (e *TOCEntry) ToTarHeader() (h *tar.Header) {
+	h = &tar.Header{Format: tar.FormatUSTAR}
+
+	switch e.Type {
+	case "hardlink":
+		h.Typeflag = tar.TypeLink
+		h.Linkname = e.LinkName
+	case "symlink":
+		h.Typeflag = tar.TypeSymlink
+		h.Linkname = e.LinkName
+	case "dir":
+		h.Typeflag = tar.TypeDir
+	case "reg":
+		h.Typeflag = tar.TypeReg
+		h.Size = e.Size
+	case "char":
+		h.Typeflag = tar.TypeChar
+		h.Devmajor = int64(e.DevMajor)
+		h.Devminor = int64(e.DevMinor)
+	case "block":
+		h.Typeflag = tar.TypeBlock
+		h.Devmajor = int64(e.DevMajor)
+		h.Devminor = int64(e.DevMinor)
+	case "fifo":
+		h.Typeflag = tar.TypeFifo
+	case "chunk":
+		h.Typeflag = tar.TypeReg
+
+	}
+
+	h.Name = e.Name
+	h.Mode = e.Mode
+	h.Uid = e.UID
+	h.Gid = e.GID
+	h.Uname = e.Uname
+	h.Gname = e.Gname
+	h.ModTime = e.modTime
+
+	if len(e.Xattrs) > 0 {
+		for k, v := range e.Xattrs {
+			h.PAXRecords["SCHILY.xattr."+k] = string(v)
+		}
+	}
+
+	return
+}
+
+func MakeEmptyFile(fileName string) (e *TOCEntry) {
+	e = &TOCEntry{
+		Name:    fileName,
+		Type:    "reg",
+		NumLink: 1,
+		Digest:  EmptyFileHash,
+	}
+	return e
+}
+
+// MakeWhiteoutFile parent should include the trailing backslash
+func MakeWhiteoutFile(baseName, parentDir string) (e *TOCEntry) {
+	e = MakeEmptyFile(path.Join(parentDir, fmt.Sprintf(".wh.%s", baseName)))
+	return e
+}
+
+func MakeOpaqueWhiteoutFile(parentDir string) (e *TOCEntry) {
+	e = MakeEmptyFile(path.Join(parentDir, ".wh..wh..opq"))
+	return e
+}
+
+func MakeDir(dirName string) (e *TOCEntry) {
+	e = &TOCEntry{
+		Name:    dirName,
+		Type:    "dir",
+		Mode:    0755,
+		NumLink: 2, // The directory itself(.).
+	}
+	return
+}
+
+/*
+TOCEntry section ends.
+*/
 
 // fileInfo implements os.FileInfo using the wrapped *TOCEntry.
 type fileInfo struct{ e *TOCEntry }
