@@ -78,7 +78,7 @@ var samplerFlags = []cli.Flag{
 		Name:  "env",
 		Usage: "environment valulable to add or override to the image's default config",
 	},
-	cli.StringSliceFlag{
+	cli.StringFlag{
 		Name:  "env-file",
 		Usage: "specify additional container environment variables in a file(i.e. FOO=bar, one per line)",
 	},
