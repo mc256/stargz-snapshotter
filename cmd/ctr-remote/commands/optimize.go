@@ -120,7 +120,7 @@ var OptimizeCommand = cli.Command{
 		}
 		defer done(ctx)
 
-		recordOut, esgzOptsPerLayer, wrapper, err := analyze(ctx, clicontext, client, srcRef)
+		recordOut, esgzOptsPerLayer, wrapper, startTs, err := analyze(ctx, clicontext, client, srcRef)
 		if err != nil {
 			return err
 		}
@@ -140,6 +140,20 @@ var OptimizeCommand = cli.Command{
 			return err
 		}
 		fmt.Fprintln(clicontext.App.Writer, newImg.Target.Digest.String())
+		endTs := time.Now()
+		durStr := fmt.Sprintf("[%s] total convertion time: %f\n", srcRef, endTs.Sub(*startTs).Seconds())
+		fmt.Fprint(clicontext.App.Writer, durStr)
+
+		logf, err := os.OpenFile("srv/estargz.convert.time.log",
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
+		defer logf.Close()
+		if _, err := logf.WriteString(durStr); err != nil {
+			return err
+		}
+
 		return nil
 	},
 }
@@ -159,9 +173,9 @@ func writeContentFile(ctx context.Context, client *containerd.Client, dgst diges
 	return err
 }
 
-func analyze(ctx context.Context, clicontext *cli.Context, client *containerd.Client, srcRef string) (digest.Digest, map[digest.Digest][]estargz.Option, func(converter.ConvertFunc) converter.ConvertFunc, error) {
+func analyze(ctx context.Context, clicontext *cli.Context, client *containerd.Client, srcRef string) (digest.Digest, map[digest.Digest][]estargz.Option, func(converter.ConvertFunc) converter.ConvertFunc, *time.Time, error) {
 	if clicontext.Bool("no-optimize") {
-		return "", nil, nil, nil
+		return "", nil, nil, nil, nil
 	}
 
 	// Do analysis only when the target platforms contain the current platform
@@ -171,14 +185,14 @@ func analyze(ctx context.Context, clicontext *cli.Context, client *containerd.Cl
 			for _, ps := range pss {
 				p, err := platforms.Parse(ps)
 				if err != nil {
-					return "", nil, nil, errors.Wrapf(err, "invalid platform %q", ps)
+					return "", nil, nil, nil, errors.Wrapf(err, "invalid platform %q", ps)
 				}
 				if platforms.DefaultStrict().Match(p) {
 					containsDefault = true
 				}
 			}
 			if !containsDefault {
-				return "", nil, nil, nil // do not run analyzer
+				return "", nil, nil, nil, nil // do not run analyzer
 			}
 		}
 	}
@@ -189,7 +203,7 @@ func analyze(ctx context.Context, clicontext *cli.Context, client *containerd.Cl
 	// Analyze layers and get prioritized files
 	aOpts := []analyzer.Option{analyzer.WithSpecOpts(getSpecOpts(clicontext))}
 	if clicontext.Bool("wait-on-signal") && clicontext.Bool("terminal") {
-		return "", nil, nil, fmt.Errorf("wait-on-signal can't be used with terminal flag")
+		return "", nil, nil, nil, fmt.Errorf("wait-on-signal can't be used with terminal flag")
 	}
 	if clicontext.Bool("wait-on-signal") {
 		aOpts = append(aOpts, analyzer.WithWaitOnSignal())
@@ -199,7 +213,7 @@ func analyze(ctx context.Context, clicontext *cli.Context, client *containerd.Cl
 	}
 	if clicontext.Bool("terminal") {
 		if !clicontext.Bool("i") {
-			return "", nil, nil, fmt.Errorf("terminal flag must be specified with \"-i\"")
+			return "", nil, nil, nil, fmt.Errorf("terminal flag must be specified with \"-i\"")
 		}
 		aOpts = append(aOpts, analyzer.WithTerminal())
 	}
@@ -208,31 +222,34 @@ func analyze(ctx context.Context, clicontext *cli.Context, client *containerd.Cl
 	}
 	recordOut, err := analyzer.Analyze(ctx, client, srcRef, aOpts...)
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, nil, nil, err
 	}
+
+	starTs := time.Now()
+	logrus.Infof("Timer Started!")
 
 	// Parse record file
 	srcImg, err := is.Get(ctx, srcRef)
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, nil, nil, err
 	}
 	manifestDesc, err := containerdutil.ManifestDesc(ctx, cs, srcImg.Target, platforms.DefaultStrict())
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, nil, nil, err
 	}
 	p, err := content.ReadBlob(ctx, cs, manifestDesc)
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, nil, nil, err
 	}
 	var manifest ocispec.Manifest
 	if err := json.Unmarshal(p, &manifest); err != nil {
-		return "", nil, nil, err
+		return "", nil, nil, nil, err
 	}
 	// TODO: this should be indexed by layer "index" (not "digest")
 	layerLogs := make(map[digest.Digest][]string, len(manifest.Layers))
 	ra, err := cs.ReaderAt(ctx, ocispec.Descriptor{Digest: recordOut})
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, nil, nil, err
 	}
 	defer ra.Close()
 	dec := json.NewDecoder(io.NewSectionReader(ra, 0, ra.Size()))
@@ -240,7 +257,7 @@ func analyze(ctx context.Context, clicontext *cli.Context, client *containerd.Cl
 	for dec.More() {
 		var e recorder.Entry
 		if err := dec.Decode(&e); err != nil {
-			return "", nil, nil, err
+			return "", nil, nil, nil, err
 		}
 		if *e.LayerIndex < len(manifest.Layers) &&
 			e.ManifestDigest == manifestDesc.Digest.String() {
@@ -267,7 +284,7 @@ func analyze(ctx context.Context, clicontext *cli.Context, client *containerd.Cl
 			excludes = append(excludes, desc.Digest) // reuse layer without conversion
 		}
 	}
-	return recordOut, layerOpts, excludeWrapper(excludes), nil
+	return recordOut, layerOpts, excludeWrapper(excludes), &starTs, nil
 }
 
 func isReusableESGZLayer(ctx context.Context, desc ocispec.Descriptor, cs content.Store) bool {
