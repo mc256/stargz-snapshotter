@@ -96,6 +96,10 @@ var OptimizeCommand = cli.Command{
 			Name:  "env",
 			Usage: "environment valulable to add or override to the image's default config",
 		},
+		cli.StringFlag{
+			Name:  "env-file",
+			Usage: "specify additional container environment variables in a file(i.e. FOO=bar, one per line)",
+		},
 		cli.StringSliceFlag{
 			Name:  "mount",
 			Usage: "additional mounts for the container (e.g. type=foo,source=/path,destination=/target,options=bind)",
@@ -243,6 +247,9 @@ var OptimizeCommand = cli.Command{
 func parseArgs(clicontext *cli.Context) (opts []sampler.Option, err error) {
 	if env := clicontext.StringSlice("env"); len(env) > 0 {
 		opts = append(opts, sampler.WithEnvs(env))
+	}
+	if envFile := clicontext.String("env-file"); envFile != "" {
+		opts = append(opts, sampler.WithEnvFile(envFile))
 	}
 	if mounts := clicontext.StringSlice("mount"); len(mounts) > 0 {
 		opts = append(opts, sampler.WithMounts(mounts))

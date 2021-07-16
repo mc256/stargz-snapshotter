@@ -16,6 +16,11 @@
 
 package sampler
 
+import (
+	"bufio"
+	"os"
+)
+
 type Option func(*options)
 
 type options struct {
@@ -39,6 +44,26 @@ type options struct {
 func WithEnvs(envs []string) Option {
 	return func(opts *options) {
 		opts.envs = envs
+	}
+}
+
+func WithEnvFile(path string) Option {
+	return func(opts *options) {
+		var vars []string
+		f, err := os.Open(path)
+		if err != nil {
+			return
+		}
+		defer f.Close()
+
+		sc := bufio.NewScanner(f)
+		for sc.Scan() {
+			vars = append(vars, sc.Text())
+		}
+		if err = sc.Err(); err != nil {
+			return
+		}
+		WithEnvs(vars)(opts)
 	}
 }
 
